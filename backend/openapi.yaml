@@ -1,0 +1,403 @@
+openapi: 3.1.0
+info:
+  title: API Uber-like Programación IV (UTN FRRe)
+  description: >
+    Especificación de la API REST para el Trabajo Práctico Integrador de Programación IV.
+    Soporta operaciones de autenticación JWT (access y refresh tokens), gestión de viajes
+    para pasajeros y conductores, chat en tiempo real y observabilidad.
+  version: 1.0.0
+  contact:
+    name: Cátedra Programación IV - TUP 2026
+    email: tup@frre.utn.edu.ar
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Servidor de Desarrollo Local
+paths:
+  /auth/register/passenger:
+    post:
+      summary: Registro de Pasajero (REQ-01)
+      tags: [Autenticación]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterPassengerRequest'
+      responses:
+        '201':
+          description: Pasajero registrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /auth/register/driver:
+    post:
+      summary: Registro de Conductor (REQ-01)
+      tags: [Autenticación]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDriverRequest'
+      responses:
+        '201':
+          description: Conductor registrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /auth/login:
+    post:
+      summary: Iniciar Sesión (REQ-01, RT-04)
+      tags: [Autenticación]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login exitoso, entrega de access y refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/refresh:
+    post:
+      summary: Renovación de Token JWT (RT-04)
+      tags: [Autenticación]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Tokens renovados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokensResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/me:
+    get:
+      summary: Perfil del usuario autenticado (REQ-01)
+      tags: [Autenticación]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Perfil de usuario
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /rides/estimate:
+    post:
+      summary: Estimar tarifa y distancia de un viaje
+      tags: [Viajes]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateFareRequest'
+      responses:
+        '200':
+          description: Estimación de tarifa calculada
+
+  /rides:
+    post:
+      summary: Solicitar un viaje como Pasajero (REQ-03)
+      tags: [Viajes]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRideRequest'
+      responses:
+        '201':
+          description: Viaje solicitado con éxito
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /rides/pending:
+    get:
+      summary: Listar viajes solicitados pendientes de conductor (REQ-04)
+      tags: [Viajes]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista de viajes disponibles
+
+  /rides/active:
+    get:
+      summary: Obtener viaje activo en curso del usuario
+      tags: [Viajes]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Viaje activo o null
+
+  /rides/history:
+    get:
+      summary: Historial de viajes paginado (RNF-06, RT-01)
+      tags: [Viajes]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Historial paginado
+
+  /rides/{rideId}/accept:
+    post:
+      summary: Conductor acepta un viaje
+      tags: [Viajes]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: rideId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Viaje asignado y aceptado
+
+  /health:
+    get:
+      summary: Health check y diagnóstico del sistema (RT-10)
+      tags: [Observabilidad]
+      responses:
+        '200':
+          description: Estado de salud de los servicios y proveedores
+
+  /info:
+    get:
+      summary: Metadatos y versiones de la API
+      tags: [Observabilidad]
+      responses:
+        '200':
+          description: Información técnica del servicio
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterPassengerRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          example: Carlos Gomez
+        email:
+          type: string
+          example: pasajero@utn.edu.ar
+        password:
+          type: string
+          example: Password123!
+        phone:
+          type: string
+          example: "+54 362 4001122"
+
+    RegisterDriverRequest:
+      type: object
+      required: [name, email, password, phone, vehicleModel, vehiclePlate, vehicleColor, licenseNumber]
+      properties:
+        name:
+          type: string
+          example: Laura Mendez
+        email:
+          type: string
+          example: conductor@utn.edu.ar
+        password:
+          type: string
+          example: Password123!
+        phone:
+          type: string
+          example: "+54 362 4998877"
+        vehicleModel:
+          type: string
+          example: Toyota Corolla
+        vehiclePlate:
+          type: string
+          example: AF 123 CD
+        vehicleColor:
+          type: string
+          example: Gris Plata
+        licenseNumber:
+          type: string
+          example: B1-99887766
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          example: pasajero@utn.edu.ar
+        password:
+          type: string
+          example: Password123!
+
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    Coordinates:
+      type: object
+      required: [latitude, longitude]
+      properties:
+        latitude:
+          type: number
+          example: -27.4514
+        longitude:
+          type: number
+          example: -58.9866
+
+    EstimateFareRequest:
+      type: object
+      required: [originLocation, destinationLocation]
+      properties:
+        originLocation:
+          $ref: '#/components/schemas/Coordinates'
+        destinationLocation:
+          $ref: '#/components/schemas/Coordinates'
+
+    CreateRideRequest:
+      type: object
+      required: [originAddress, originLocation, destinationAddress, destinationLocation]
+      properties:
+        originAddress:
+          type: string
+          example: "Av. French 414, Resistencia"
+        originLocation:
+          $ref: '#/components/schemas/Coordinates'
+        destinationAddress:
+          type: string
+          example: "Plaza 25 de Mayo, Resistencia"
+        destinationLocation:
+          $ref: '#/components/schemas/Coordinates'
+
+    TokensResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: string
+
+    AuthSuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            user:
+              type: object
+            tokens:
+              $ref: '#/components/schemas/TokensResponse'
+
+    ProblemDetails:
+      type: object
+      required: [type, title, status, detail, instance, code, timestamp]
+      properties:
+        type:
+          type: string
+          example: "https://api.uber-tpi.utn.edu.ar/errors/unauthorized"
+        title:
+          type: string
+          example: "Unauthorized"
+        status:
+          type: integer
+          example: 401
+        detail:
+          type: string
+          example: "Credenciales inválidas"
+        instance:
+          type: string
+          example: "/api/v1/auth/login"
+        code:
+          type: string
+          example: "UNAUTHORIZED"
+        timestamp:
+          type: string
+          example: "2026-10-28T14:30:00.000Z"
+        invalidParams:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              reason:
+                type: string
+
+  responses:
+    ValidationError:
+      description: Error de validación en la petición (RFC 7807)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    UnauthorizedError:
+      description: No autenticado o credenciales incorrectas
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    ConflictError:
+      description: Conflicto con el recurso actual
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'

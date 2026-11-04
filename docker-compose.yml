@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # Base de Datos Transaccional Primaria (RT-02: Proveedor 1 - PostgreSQL)
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: uber_postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-uber_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-uber_password}
+      POSTGRES_DB: ${DB_NAME:-uber_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-uber_user} -d ${DB_NAME:-uber_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Proveedor de Datos Secundario para Presencia/Realtime (RT-02: Proveedor 2 - Redis)
+  redis-cache:
+    image: redis:7-alpine
+    container_name: uber_redis_cache
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Backend (Node.js + Express + TypeScript + Socket.io)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: uber_backend_api
+    restart: always
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://${DB_USER:-uber_user}:${DB_PASSWORD:-uber_password}@postgres-db:5432/${DB_NAME:-uber_db}
+      REDIS_URL: redis://redis-cache:6379
+      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_dev_2026}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-super_refresh_secret_key_dev_2026}
+      CORS_ORIGIN: http://localhost:5173
+
+  # Frontend Web (React + Vite)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: uber_frontend_web
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+    environment:
+      VITE_API_URL: http://localhost:3000/api/v1
+      VITE_SOCKET_URL: http://localhost:3000
+
+volumes:
+  postgres_data:
+  redis_data:

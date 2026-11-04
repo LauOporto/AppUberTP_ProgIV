@@ -1,0 +1,59 @@
+name: Continuous Integration (CI) Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend-ci:
+    name: Backend Lint, Build & Tests (RT-07)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+          cache-dependency-path: ./backend/package-lock.json
+
+      - name: Restore Dependencies
+        run: npm ci
+
+      - name: Compile / Type Check TypeScript
+        run: npm run build
+
+      - name: Run Automated Tests (RT-06)
+        run: npm test
+
+  frontend-ci:
+    name: Frontend Lint & Build (RT-07)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Restore Dependencies
+        run: npm ci
+
+      - name: Build React + Vite Production Bundle
+        run: npm run build
