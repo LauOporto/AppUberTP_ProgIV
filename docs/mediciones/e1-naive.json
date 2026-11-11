@@ -1,0 +1,164 @@
+{
+  "label": "E1 ingenua (500 choferes)",
+  "measuredAt": "2026-11-11T05:48:30.086Z",
+  "parameters": {
+    "baseUrl": "http://localhost:3100",
+    "runs": 3,
+    "durationSeconds": 30,
+    "connections": 10,
+    "heavyRate": 20
+  },
+  "environment": {
+    "node": "v26.12.1",
+    "platform": "Windows_NT 10.0.26300 (x64)",
+    "cpu": "12th Gen Intel(R) Core(TM) i3-12100",
+    "cores": 8,
+    "totalMemoryGb": 15.8
+  },
+  "runs": [
+    {
+      "run": 1,
+      "health": {
+        "requests": 308201,
+        "requestsPerSecond": 10273.6,
+        "latencyMs": {
+          "p50": 0.65,
+          "p95": 1.59,
+          "p99": 4.58,
+          "max": 98.81
+        },
+        "non2xx": 0,
+        "errors": 0,
+        "timeouts": 0
+      },
+      "estimate": {
+        "requests": 607,
+        "requestsPerSecond": 20.2,
+        "latencyMs": {
+          "p50": 45.41,
+          "p95": 77.57,
+          "p99": 90.3,
+          "max": 93.63
+        },
+        "non2xx": 0,
+        "errors": 0,
+        "timeouts": 0
+      },
+      "server": {
+        "lagMs": {
+          "min": 9.06,
+          "mean": 11.87,
+          "p50": 10.08,
+          "p90": 12.1,
+          "p99": 67.5,
+          "max": 97.71
+        },
+        "utilization": 0.999,
+        "rssMb": 166.7,
+        "heapUsedMb": 68.6,
+        "serverRequestsPerSecond": 10487.4,
+        "rateLimited": 0,
+        "locationIndexEntries": {
+          "before": 51045,
+          "after": 58553
+        }
+      }
+    },
+    {
+      "run": 2,
+      "health": {
+        "requests": 301378,
+        "requestsPerSecond": 10046.4,
+        "latencyMs": {
+          "p50": 0.64,
+          "p95": 1.56,
+          "p99": 5.11,
+          "max": 120.19
+        },
+        "non2xx": 0,
+        "errors": 0,
+        "timeouts": 0
+      },
+      "estimate": {
+        "requests": 603,
+        "requestsPerSecond": 20.1,
+        "latencyMs": {
+          "p50": 66.94,
+          "p95": 88.45,
+          "p99": 94.14,
+          "max": 110.72
+        },
+        "non2xx": 0,
+        "errors": 0,
+        "timeouts": 0
+      },
+      "server": {
+        "lagMs": {
+          "min": 9.06,
+          "mean": 12.13,
+          "p50": 10.08,
+          "p90": 11.66,
+          "p99": 79.69,
+          "max": 120.91
+        },
+        "utilization": 0.999,
+        "rssMb": 168.8,
+        "heapUsedMb": 43.6,
+        "serverRequestsPerSecond": 10265.9,
+        "rateLimited": 0,
+        "locationIndexEntries": {
+          "before": 59831,
+          "after": 67311
+        }
+      }
+    },
+    {
+      "run": 3,
+      "health": {
+        "requests": 289348,
+        "requestsPerSecond": 9645.3,
+        "latencyMs": {
+          "p50": 0.64,
+          "p95": 1.57,
+          "p99": 4.15,
+          "max": 155.26
+        },
+        "non2xx": 0,
+        "errors": 0,
+        "timeouts": 0
+      },
+      "estimate": {
+        "requests": 620,
+        "requestsPerSecond": 20,
+        "latencyMs": {
+          "p50": 98.88,
+          "p95": 129.28,
+          "p99": 144.38,
+          "max": 153.6
+        },
+        "non2xx": 0,
+        "errors": 0,
+        "timeouts": 0
+      },
+      "server": {
+        "lagMs": {
+          "min": 9.04,
+          "mean": 13.11,
+          "p50": 10.09,
+          "p90": 12.14,
+          "p99": 115.61,
+          "max": 158.99
+        },
+        "utilization": 0.977,
+        "rssMb": 171.8,
+        "heapUsedMb": 42.8,
+        "serverRequestsPerSecond": 9563.3,
+        "rateLimited": 0,
+        "locationIndexEntries": {
+          "before": 68644,
+          "after": 76331
+        }
+      }
+    }
+  ]
+}
