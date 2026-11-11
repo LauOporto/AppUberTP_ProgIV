@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError, ProblemDetails } from '../../domain/errors/ProblemDetails.js';
 import { logger } from '../../infrastructure/logger/Logger.js';
+import { DomainError } from '../../domain/errors/DomainError.js';
+import { DOMAIN_ERROR_HTTP_STATUS } from './domainErrorMapping.js';
 
 export const errorHandler = (
   err: Error,
@@ -18,7 +20,16 @@ export const errorHandler = (
   let title = 'Internal Server Error';
   let invalidParams: Array<{ name: string; reason: string }> | undefined;
 
-  if (err instanceof AppError) {
+  if (err instanceof DomainError) {
+    statusCode = DOMAIN_ERROR_HTTP_STATUS[err.code];
+    code = err.code;
+    type = `https://api.uber-tpi.utn.edu.ar/errors/${err.code.toLowerCase().replace(/_/g, '-')}`;
+    title = 'Domain Rule Violation';
+    // Un 500 nunca expone el mensaje interno al cliente.
+    if (statusCode < 500) {
+      detail = err.message;
+    }
+  } else if (err instanceof AppError) {
     statusCode = err.statusCode;
     code = err.code;
     type = err.type;
