@@ -42,3 +42,9 @@ Thumbs.db
 
 # Docker
 .dockerignore
+
+# Carpeta privada de planificación (no se sube al repo)
+/docs (NO SUBIR ESTA CARPETA AL REPO)/
+
+# Credenciales de prueba generadas por el simulador de choferes
+.simulator/

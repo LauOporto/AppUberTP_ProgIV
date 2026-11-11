@@ -2,18 +2,27 @@
   "name": "tpi-uber-workspace",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=22 <23"
+  },
   "description": "Plataforma de viajes tipo Uber (Pasajero y Conductor) - TPI Programación IV UTN FRRe",
   "workspaces": [
     "frontend",
     "backend"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=backend & npm run dev --workspace=frontend",
+    "dev": "concurrently -n backend,frontend -c blue,magenta \"npm run dev --workspace=backend\" \"npm run dev --workspace=frontend\"",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
     "build": "npm run build --workspace=backend && npm run build --workspace=frontend",
+    "start": "npm run start --workspace=backend",
+    "migrate": "npm run migrate --workspace=backend",
+    "seed": "npm run seed --workspace=backend",
+    "setup": "npm run setup --workspace=backend",
     "test": "npm run test --workspace=backend",
-    "install:all": "npm install --workspace=backend && npm install --workspace=frontend"
+    "install:all": "npm install --workspace=backend && npm install --workspace=frontend",
+    "simulate": "npm run simulate --workspace=backend --",
+    "bench": "npm run bench --workspace=backend --"
   },
   "keywords": [
     "react",
@@ -27,5 +36,8 @@
     "utn"
   ],
   "author": "UTN Inc. Team",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^10.0.7"
+  }
 }
