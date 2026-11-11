@@ -4,6 +4,7 @@ import { config } from './config/environment.js';
 import { container } from './infrastructure/di/container.js';
 import { WebSocketGateway } from './infrastructure/websocket/SocketServer.js';
 import { logger } from './infrastructure/logger/Logger.js';
+import { runtimeMetrics } from './infrastructure/observability/runtimeMetrics.js';
 
 async function bootstrap() {
   try {
@@ -11,11 +12,14 @@ async function bootstrap() {
     await container.initialize();
     logger.info('Semillas de datos inicializadas correctamente', 'Bootstrap');
 
+    // Monitor del event loop activo desde el arranque (Bloque 7)
+    runtimeMetrics.start();
+
     // 2. Crear servidor HTTP
     const server = http.createServer(app);
 
     // 3. Inicializar Gateway de WebSockets / SignalR (RT-04, REQ-05, REQ-06)
-    const wsGateway = new WebSocketGateway(server, config.corsOrigin);
+    const wsGateway = new WebSocketGateway(server, config.corsOrigins);
     logger.info('WebSocket Gateway activo y escuchando eventos', 'Bootstrap');
 
     // 4. Iniciar escucha en el puerto configurado
@@ -23,11 +27,13 @@ async function bootstrap() {
       logger.info(`🚀 Servidor backend ejecutándose en: http://localhost:${config.port}`, 'Bootstrap');
       logger.info(`📘 Documentación OpenAPI Scalar disponible en: http://localhost:${config.port}/docs`, 'Bootstrap');
       logger.info(`🩺 Endpoint de salud: http://localhost:${config.port}/health`, 'Bootstrap');
+      logger.info(`📈 Métricas del event loop: http://localhost:${config.port}/metrics`, 'Bootstrap');
     });
 
     // Manejo de apagado graceful
     const gracefulShutdown = () => {
       logger.info('Señal de terminación recibida. Cerrando conexiones...', 'Shutdown');
+      runtimeMetrics.stop();
       server.close(() => {
         logger.info('Servidor HTTP y WebSockets detenidos limpiamente.', 'Shutdown');
         process.exit(0);

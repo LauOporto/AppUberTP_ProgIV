@@ -4,6 +4,10 @@ import { ISecondaryPresenceStore } from '../../domain/interfaces/ISecondaryPrese
 import { Ride, RideStatus, Coordinates } from '../../domain/entities/Ride.js';
 import { CreateRideDto, EstimateFareDto, UpdateRideStatusDto } from '../dtos/ride.dto.js';
 import { ConflictError, NotFoundError, ForbiddenError, BadRequestError } from '../../domain/errors/ProblemDetails.js';
+import { DriverLocationIndex } from '../../domain/ports/driverLocationIndex.js';
+
+/** Parámetros de la búsqueda de candidatos para la cotización. */
+const PICKUP_SEARCH = { radiusMeters: 5_000, limit: 10, maxAgeMs: 30_000, averageSpeedKmh: 30 };
 
 export class RideService {
   private readonly BASE_FARE = 1200; // Tarifa base en ARS
@@ -13,8 +17,35 @@ export class RideService {
   constructor(
     private readonly rideRepository: IRideRepository,
     private readonly userRepository: IUserRepository,
-    private readonly presenceStore: ISecondaryPresenceStore
+    private readonly presenceStore: ISecondaryPresenceStore,
+    private readonly locationIndex: DriverLocationIndex
   ) {}
+
+  /**
+   * Cotización + choferes cercanos (tiempo estimado hasta que llegue el chofer más cercano).
+   * La búsqueda de candidatos es la parte "pesada" que se mide en la tarea pesada (§6.6).
+   */
+  public async estimateWithPickup(dto: EstimateFareDto) {
+    const estimate = this.estimateFare(dto);
+    const nearby = await this.locationIndex.findNearby({
+      origin: dto.originLocation,
+      radiusMeters: PICKUP_SEARCH.radiusMeters,
+      limit: PICKUP_SEARCH.limit,
+      maxAgeMs: PICKUP_SEARCH.maxAgeMs,
+      now: new Date()
+    });
+    const nearest = nearby[0];
+    return {
+      ...estimate,
+      pickup: {
+        nearbyDrivers: nearby.length,
+        nearestDriverMeters: nearest?.distanceMeters ?? null,
+        nearestDriverEtaMinutes: nearest
+          ? Math.max(1, Math.round(nearest.distanceMeters / ((PICKUP_SEARCH.averageSpeedKmh * 1000) / 60)))
+          : null
+      }
+    };
+  }
 
   public calculateDistanceKm(c1: Coordinates, c2: Coordinates): number {
     const R = 6371; // Radio de la Tierra en km

@@ -4,7 +4,7 @@ import { container } from '../../infrastructure/di/container.js';
 export class RideController {
   public async estimateFare(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const estimate = container.rideService.estimateFare(req.body);
+      const estimate = await container.rideService.estimateWithPickup(req.body);
       res.status(200).json({
         success: true,
         data: estimate

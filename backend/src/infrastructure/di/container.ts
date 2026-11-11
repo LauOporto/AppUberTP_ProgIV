@@ -10,6 +10,10 @@ import { DriverLocationService } from '../../application/services/DriverLocation
 import { ChatService } from '../../application/services/ChatService.js';
 
 import { dbContext } from '../database/primary/DatabaseClient.js';
+import { config } from '../../config/environment.js';
+import { NaiveLocationLog } from '../location/NaiveLocationLog.js';
+import { DriverLocationIndex } from '../../domain/ports/driverLocationIndex.js';
+import { runtimeMetrics } from '../observability/runtimeMetrics.js';
 
 class DependencyContainer {
   // Infraestructura (Proveedores de Datos y Seguridad)
@@ -17,7 +21,10 @@ class DependencyContainer {
   public readonly rideRepository = new SqliteRideRepository();
   public readonly presenceStore = new RedisOrMemoryPresenceStore();
   public readonly tokenService = new JwtTokenService();
-  public readonly passwordHasher = new BcryptPasswordHasher();
+  public readonly passwordHasher = new BcryptPasswordHasher(config.security.bcryptCost);
+
+  // Tarea pesada (§6.6): por ahora la versión INGENUA (HT-02). La optimizada (HT-03) se cambia acá.
+  public readonly locationIndex: DriverLocationIndex = new NaiveLocationLog();
 
   // Capa de Aplicación (Servicios de Dominio / Casos de Uso)
   public readonly authService: AuthService;
@@ -36,13 +43,17 @@ class DependencyContainer {
     this.rideService = new RideService(
       this.rideRepository,
       this.userRepository,
-      this.presenceStore
+      this.presenceStore,
+      this.locationIndex
     );
 
     this.driverLocationService = new DriverLocationService(
       this.presenceStore,
-      this.userRepository
+      this.userRepository,
+      this.locationIndex
     );
+
+    runtimeMetrics.registerGauge('locationIndexEntries', () => this.locationIndex.size());
 
     this.chatService = new ChatService(this.rideRepository);
   }

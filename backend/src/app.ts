@@ -11,6 +11,8 @@ import { requestLogger } from './presentation/middlewares/requestLogger.js';
 import { errorHandler, notFoundHandler } from './presentation/middlewares/errorHandler.js';
 import { apiRateLimiter } from './presentation/middlewares/rateLimiter.js';
 import apiRoutes from './presentation/routes/index.js';
+import { runtimeMetrics } from './infrastructure/observability/runtimeMetrics.js';
+import { isMetricsRequestAllowed } from './infrastructure/observability/metricsAccess.js';
 
 const app = express();
 
@@ -24,7 +26,7 @@ app.use(
 // Habilitar CORS acorde al frontend (RT-04, REQ-10)
 app.use(
   cors({
-    origin: config.corsOrigin,
+    origin: config.corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID']
@@ -37,6 +39,38 @@ app.use(express.urlencoded({ extended: true }));
 
 // Trazabilidad y Logging estructurado (RT-10)
 app.use(requestLogger);
+
+// Conteo de pedidos por ventana de medición (Bloque 7)
+app.use(runtimeMetrics.countRequests);
+
+// Métricas del proceso: lag del event loop, utilización, memoria, pedidos/s (Bloque 7, §11.2).
+// Van fuera de /api para que el rate limit no interfiera con la medición.
+const guardMetrics: express.RequestHandler = (req, res, next) => {
+  const allowed = isMetricsRequestAllowed({
+    ip: req.ip ?? req.socket.remoteAddress,
+    authorizationHeader: req.headers.authorization,
+    configuredToken: config.metrics.token
+  });
+  if (!allowed) {
+    // 404 y no 403: no se confirma que el endpoint exista.
+    res.status(404).json({ status: 404, title: 'Not Found', code: 'ROUTE_NOT_FOUND' });
+    return;
+  }
+  runtimeMetrics.start();
+  next();
+};
+
+app.get('/metrics', guardMetrics, (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json(runtimeMetrics.snapshot());
+});
+
+// Cierra la ventana actual (devuelve sus números) y empieza una nueva: se llama al inicio de cada corrida.
+app.post('/metrics/reset', guardMetrics, (_req, res) => {
+  const previousWindow = runtimeMetrics.snapshot();
+  runtimeMetrics.reset();
+  res.json({ reset: true, previousWindow });
+});
 
 // Rate Limiting global para API (RT-04)
 app.use('/api', apiRateLimiter);
