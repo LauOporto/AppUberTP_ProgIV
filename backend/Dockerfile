@@ -22,6 +22,8 @@ RUN npm ci --only=production
 
 COPY --from=builder /app/dist ./dist
 COPY openapi.yaml ./
+# Migraciones SQL: las lee el ejecutor de migraciones en tiempo de ejecución
+COPY db ./db
 
 EXPOSE 3000
 
