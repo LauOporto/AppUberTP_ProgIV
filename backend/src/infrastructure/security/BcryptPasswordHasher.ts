@@ -2,7 +2,8 @@ import bcrypt from 'bcryptjs';
 import { IPasswordHasher } from '../../domain/interfaces/IPasswordHasher.js';
 
 export class BcryptPasswordHasher implements IPasswordHasher {
-  private readonly saltRounds = 10;
+  /** Factor de costo declarado por configuración (BCRYPT_COST, por defecto 12). */
+  constructor(private readonly saltRounds: number) {}
 
   public async hash(plainText: string): Promise<string> {
     return bcrypt.hash(plainText, this.saltRounds);

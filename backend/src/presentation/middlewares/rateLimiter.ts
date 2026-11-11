@@ -20,8 +20,8 @@ export const apiRateLimiter = rateLimit({
 });
 
 export const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 20, // 20 intentos de login/registro
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.authMax, // AUTH_RATE_LIMIT_MAX (default 20)
   standardHeaders: true,
   legacyHeaders: false,
   message: {

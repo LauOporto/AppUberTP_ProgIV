@@ -47,10 +47,20 @@ npm install
 ```
 
 ### 2. Variables de Entorno
-Copia el archivo de ejemplo en el backend:
+Copia el archivo de ejemplo en la raíz del repositorio (lo usan docker compose y el backend):
 ```bash
-cp backend/.env.example backend/.env
+cp .env.example .env
 ```
+Si falta una variable obligatoria o tiene un valor inválido, el backend no arranca e informa cuál es.
+
+### 2.1 Base de datos: esquema y datos de prueba
+Con PostgreSQL levantado (`docker compose up -d` o un PostgreSQL local apuntado por `DATABASE_URL`):
+```bash
+npm run setup      # = npm run migrate (migraciones SQL en backend/db/migrations) + npm run seed
+```
+Es idempotente: se puede correr varias veces. Usuarios de prueba: `admin@demo.local`, `operador@demo.local`,
+`pasajero1..3@demo.local`, `chofer1..5@demo.local` (contraseña `Demo1234!`).
+Los tests usan automáticamente una base aparte, `<nombre>_test`, que se crea y migra sola.
 
 ### 3. Ejecución en Modo Desarrollo
 Para iniciar simultáneamente Backend (puerto 3000) y Frontend (puerto 5173):

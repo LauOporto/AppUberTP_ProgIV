@@ -15,7 +15,7 @@ describe('AuthService (Unit Tests - RT-06)', () => {
     await dbContext.initializeSeedData();
     userRepo = new SqliteUserRepository();
     tokenService = new JwtTokenService();
-    passwordHasher = new BcryptPasswordHasher();
+    passwordHasher = new BcryptPasswordHasher(4); // costo mínimo: solo para que el test sea rápido
     authService = new AuthService(userRepo, tokenService, passwordHasher);
   });
 

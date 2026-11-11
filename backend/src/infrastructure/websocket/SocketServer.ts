@@ -15,7 +15,7 @@ interface AuthenticatedSocket extends Socket {
 export class WebSocketGateway {
   private io: Server;
 
-  constructor(httpServer: HttpServer, corsOrigin: string) {
+  constructor(httpServer: HttpServer, corsOrigin: string[]) {
     this.io = new Server(httpServer, {
       cors: {
         origin: corsOrigin,

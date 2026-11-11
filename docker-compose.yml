@@ -8,10 +8,11 @@ services:
     restart: always
     environment:
       POSTGRES_USER: ${DB_USER:-uber_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-uber_password}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env (cp .env.example .env)}
       POSTGRES_DB: ${DB_NAME:-uber_db}
     ports:
-      - "5432:5432"
+      # Puerto del host configurable: si ya hay un PostgreSQL local en 5432, usar DB_PORT=5433 en .env
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -52,11 +53,13 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3000
-      DATABASE_URL: postgresql://${DB_USER:-uber_user}:${DB_PASSWORD:-uber_password}@postgres-db:5432/${DB_NAME:-uber_db}
+      DATABASE_URL: postgresql://${DB_USER:-uber_user}:${DB_PASSWORD:?Falta DB_PASSWORD en .env}@postgres-db:5432/${DB_NAME:-uber_db}
       REDIS_URL: redis://redis-cache:6379
-      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_dev_2026}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-super_refresh_secret_key_dev_2026}
-      CORS_ORIGIN: http://localhost:5173
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Falta JWT_REFRESH_SECRET en .env}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      BCRYPT_COST: ${BCRYPT_COST:-12}
+      SHUTDOWN_TIMEOUT_MS: ${SHUTDOWN_TIMEOUT_MS:-10000}
 
   # Frontend Web (React + Vite)
   frontend:

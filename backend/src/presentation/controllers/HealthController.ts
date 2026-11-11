@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { container } from '../../infrastructure/di/container.js';
+import { config } from '../../config/environment.js';
 
 export class HealthController {
   public async getHealth(req: Request, res: Response): Promise<void> {
@@ -10,7 +11,7 @@ export class HealthController {
       status: 'UP',
       timestamp: new Date().toISOString(),
       uptimeSeconds: Math.floor(process.uptime()),
-      environment: process.env.NODE_ENV || 'development',
+      environment: config.nodeEnv,
       providers: {
         primaryDatabase: {
           status: 'UP',
